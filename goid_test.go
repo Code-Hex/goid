@@ -2,7 +2,9 @@ package goid_test
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -20,19 +22,20 @@ func TestA(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			mu.Lock()
-			t.Log(goid.Get())
-			checkGoID(t)
-			t.Log("--------------")
+			if want, got := goIDByStack(), goid.Get(); want != got {
+				panic(fmt.Sprintf("want %d, but got %d", want, got))
+			}
 			mu.Unlock()
 		}()
 	}
 	wg.Wait()
 }
 
-func checkGoID(t *testing.T) {
+func goIDByStack() int64 {
 	buf := make([]byte, 64)
 	s := buf[:runtime.Stack(buf, false)]
 	s = s[len("goroutine "):]
 	s = s[:bytes.IndexByte(s, ' ')]
-	t.Log(string(s))
+	i, _ := strconv.ParseInt(string(s), 10, 64)
+	return i
 }
